@@ -1,28 +1,30 @@
 import { useRoutes } from 'react-router-dom';
 
+import { adminRoutes } from './admin';
 import { anonRoutes } from './anon';
-import { operatorRoutes } from './operator';
 import { userRoutes } from './user';
 
+import { ReportRouter } from '@/features/report';
+import { useAuth } from '@/hooks/useAuth.ts';
 import LandingPage from '@/pages/anon/LandingPage.tsx';
 
 export const AppRoutes = () => {
-  //TODO: replace with auth context
-  const auth = { user: { id: 123, operator: false } };
+  const { token, isAdmin } = useAuth();
 
-  const commonRoutes = [{ path: '/', element: <LandingPage /> }];
+  const commonRoutes = [
+    { path: '/', element: <LandingPage /> },
+    { path: '/report/*', element: <ReportRouter /> },
+    { path: '/*', element: <h1>404</h1> },
+  ];
+  const fullRoutes = [...adminRoutes, ...userRoutes];
 
-  const routes = determineRoutes(auth);
+  const determineRoutes = () => {
+    if (!token) return anonRoutes;
 
-  const element = useRoutes([...routes, ...commonRoutes]);
+    return isAdmin ? fullRoutes : userRoutes;
+  };
 
-  return <>{element}</>;
-};
+  const routes = determineRoutes();
 
-const determineRoutes = (auth: { user: { id: number; operator: boolean } }) => {
-  if (auth.user) {
-    return auth.user.operator ? operatorRoutes : userRoutes;
-  } else {
-    return anonRoutes;
-  }
+  return useRoutes([...routes, ...commonRoutes]);
 };
